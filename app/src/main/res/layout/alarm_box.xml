@@ -6,10 +6,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="5dp"
+    android:id="@+id/widgetid"
     >
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/timeButton"
         android:layout_width="202dp"
         android:layout_height="74dp"
         android:text="15:30"
@@ -23,7 +24,7 @@
         android:id="@+id/switch1"
         android:layout_width="59dp"
         android:layout_height="73dp"
-        app:layout_constraintBottom_toBottomOf="@+id/button2"
-        app:layout_constraintStart_toEndOf="@+id/button2"
-        app:layout_constraintTop_toTopOf="@+id/button2" />
+        app:layout_constraintBottom_toBottomOf="@+id/timeButton"
+        app:layout_constraintStart_toEndOf="@+id/timeButton"
+        app:layout_constraintTop_toTopOf="@+id/timeButton" />
 </androidx.constraintlayout.widget.ConstraintLayout>

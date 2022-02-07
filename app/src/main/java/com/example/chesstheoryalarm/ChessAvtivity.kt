@@ -18,6 +18,7 @@ import java.io.InputStream
 * TODO:
 *  settings (add/remove force shutoff alarm button)
 *  show solution
+*  sound! that disables for 20 sek on touch, for 10 mins
 * */
 
 // alarm service
@@ -135,7 +136,7 @@ class ChessAvtivity : AppCompatActivity() {
 
     private var currentProblemIndex = 2
     private var wereAtMove = 0
-    private var currentFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    private var currentFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
     private var currentSolution = emptyList<String>()
 
     @RequiresApi(Build.VERSION_CODES.N)

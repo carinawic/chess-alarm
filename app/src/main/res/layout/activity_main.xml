@@ -33,6 +33,7 @@
         tools:ignore="OnClick" />
 
     <ScrollView
+        android:id="@+id/scrollvewid"
         android:paddingTop="100dp"
         android:paddingHorizontal="30dp"
 
