@@ -14,11 +14,12 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.children
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.*
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), View.OnClickListener {
 
 
     /*
@@ -70,10 +71,17 @@ class MainActivity : AppCompatActivity() {
         val bt = cl.findViewById<Button>(R.id.timeButton) as Button
         val sw = cl.findViewById<Switch>(R.id.alarmSwitch) as Switch
 
-        sw.setOnClickListener { v -> onClickAlarmButton(v) }
-        bt.setOnClickListener { v -> onClickAlarmButton(v) }
+        // put onclicklisteners on ALL buttons at the same time
+        for(child in il.children){
+            val buttonToClick = child.findViewById<Button>(R.id.timeButton) as Button
+            buttonToClick.setOnClickListener(){
+                Toast.makeText(this@MainActivity, "You clicked me.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         bt.text = time
+
+
 
         /*
 
@@ -154,5 +162,10 @@ class MainActivity : AppCompatActivity() {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onClick(p0: View?) {
+        TODO("Not yet implemented")
+        Log.e("debug", "womething was clicked")
     }
 }
