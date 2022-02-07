@@ -10,13 +10,10 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ScrollView
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.children
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.*
 
@@ -35,7 +32,6 @@ class MainActivity : AppCompatActivity() {
 
     /*
     * TODO:
-    *  create a widget for each new alarm
     *  everytime a switch changes, add or remove the alarm
     *  save to phone storage so the same settings remain next time you open the app
     *  if necessary, restart the alarms next time phone starts! */
@@ -48,14 +44,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
-
-        createWidgetForAlarm("YESSS")
-
-
         val btn: FloatingActionButton = findViewById<View>(R.id.fab) as FloatingActionButton
         btn.setOnClickListener { v -> onAddAlarmButtonClick(v) }
 
     }
+
+    private fun onClickAlarmButton(v: View) {
+        // all click listeners should end up here
+        Toast.makeText(this@MainActivity, "You clicked me.", Toast.LENGTH_SHORT).show()
+    }
+
 
     private fun createWidgetForAlarm(time: String){
         var innerLayout = findViewById<View>(R.id.innerLayout) as LinearLayout
@@ -65,17 +63,17 @@ class MainActivity : AppCompatActivity() {
 
         innerLayout.addView(v)
 
-
-
         val sv = findViewById<ScrollView>(R.id.scrollvewid) as ScrollView
         val il = sv.findViewById<LinearLayout>(R.id.innerLayout) as LinearLayout
         val cl = il.findViewById<ConstraintLayout>(R.id.widgetid) as ConstraintLayout
+
         val bt = cl.findViewById<Button>(R.id.timeButton) as Button
+        val sw = cl.findViewById<Switch>(R.id.alarmSwitch) as Switch
 
-        
-        bt.setText("hmm")
+        sw.setOnClickListener { v -> onClickAlarmButton(v) }
+        bt.setOnClickListener { v -> onClickAlarmButton(v) }
 
-
+        bt.text = time
 
         /*
 
@@ -91,7 +89,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /*From StackOverflow: If you want to set multiple alarms (repeating or single), then you just need to create their PendingIntents with different requestCode. If requestCode is the same, then the new alarm will overwrite the old one.*/
-    private fun createAlarm() {
+    private fun setAlarm() {
 
         val cal_alarm: Calendar = Calendar.getInstance()
 
@@ -124,10 +122,14 @@ class MainActivity : AppCompatActivity() {
     // Receiver
     private var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // There are no request codes
             val data: Intent? = result.data
-            Log.e("debug", "HERE IS THE TIME DATA")
-            Log.e("debug", data.toString())
+
+            val hour = data?.getStringExtra("hour")
+            val minute = data?.getStringExtra("minute")
+
+            Log.e("debug", hour.toString())
+
+            createWidgetForAlarm("$hour:$minute")
             //createAlarm(input)
         }
     }

@@ -18,10 +18,11 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        />
 
     <Switch
-        android:id="@+id/switch1"
+        android:id="@+id/alarmSwitch"
         android:layout_width="59dp"
         android:layout_height="73dp"
         app:layout_constraintBottom_toBottomOf="@+id/timeButton"

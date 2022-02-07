@@ -38,8 +38,8 @@ class TimeActivity : AppCompatActivity() {
         //Log.e("debug", tpck.hour.toString())
         //Log.e("debug", tpck.minute.toString())
         val intent = Intent()
-        intent.putExtra("hour", tpck.hour);
-        intent.putExtra( "minute", tpck.minute)
+        intent.putExtra("hour", tpck.hour.toString());
+        intent.putExtra( "minute", tpck.minute.toString())
         setResult(Activity.RESULT_OK, intent);
         finish()
     }
