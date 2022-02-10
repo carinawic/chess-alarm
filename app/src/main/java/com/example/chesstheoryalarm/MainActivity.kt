@@ -19,7 +19,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), View.OnClickListener {
+class MainActivity : AppCompatActivity(){
 
 
     /*
@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     *  if necessary, restart the alarms next time phone starts! */
 
 
-    var pendingIntents: ArrayList<PendingIntent> = ArrayList<PendingIntent>()
+    private var alarms = ArrayList<Alarm>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,16 +50,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
-    private fun onClickAlarmButton(v: View) {
-        // all click listeners should end up here
-        Toast.makeText(this@MainActivity, "You clicked me.", Toast.LENGTH_SHORT).show()
-    }
+    private fun createWidgetForAlarm(hour: String, minute:String){
+        val time = "$hour:$minute"
 
-
-    private fun createWidgetForAlarm(time: String){
         var innerLayout = findViewById<View>(R.id.innerLayout) as LinearLayout
 
-        val inflater = this.layoutInflater
         val v: View = LayoutInflater.from(this).inflate(R.layout.alarm_box, null)
 
         innerLayout.addView(v)
@@ -71,78 +66,131 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val bt = cl.findViewById<Button>(R.id.timeButton) as Button
         val sw = cl.findViewById<Switch>(R.id.alarmSwitch) as Switch
 
+        bt.text = time
         // put onclicklisteners on ALL buttons at the same time
         for(child in il.children){
             val buttonToClick = child.findViewById<Button>(R.id.timeButton) as Button
+
+            val switchToClick = child.findViewById<Switch>(R.id.alarmSwitch) as Switch
             buttonToClick.setOnClickListener(){
-                Toast.makeText(this@MainActivity, "You clicked me.", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@MainActivity, "You clicked a button.", Toast.LENGTH_SHORT).show()
+
+            }
+            switchToClick.setOnClickListener(){
+
+                var message: String
+
+                if(switchToClick.isChecked){
+                    message = "Alarm is on"
+                    Log.e("debug", "we want to switch on the alarm with the id : " + switchToClick.parent.hashCode())
+                    startAlarm(cl.hashCode())
+                }else{
+                    message = "Alarm is off"
+                    Log.e("debug", "we want to switch off the alarm with the id : " + switchToClick.parent.hashCode())
+                    stopAlarm(cl.hashCode()) // should be same as switchToClick.parent.hashCode()
+                }
+
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+
             }
         }
 
-        bt.text = time
+        //bt.text = time
 
 
+        addAlarm(cl.hashCode(), false, minute, hour)
 
-        /*
-
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        mainLayout.addView(LayoutInflater.from(this).inflate(R.layout.alarm_box, null))
-        */
     }
 
-    /*From StackOverflow: If you want to set multiple alarms (repeating or single), then you just need to create their PendingIntents with different requestCode. If requestCode is the same, then the new alarm will overwrite the old one.*/
-    private fun setAlarm() {
+    // https://developer.android.com/training/scheduling/alarms
+    private fun addAlarm(hash: Int, onoff: Boolean, minute: String, hour:String){
 
-        val cal_alarm: Calendar = Calendar.getInstance()
-
-        /*
-        val cal_now: Calendar = Calendar.getInstance()
-        cal_now.setTime(dat)
-        cal_alarm.setTime(dat)
-        cal_alarm.set(Calendar.HOUR_OF_DAY, 10)
-        cal_alarm.set(Calendar.MINUTE, 14)
-        cal_alarm.set(Calendar.SECOND, 30)
-        if (cal_alarm.before(cal_now)) {
-            cal_alarm.add(Calendar.DATE, 1)
-        }
-        */
-
-        cal_alarm.add(Calendar.SECOND, 10)
+        // set placeholder pendingIntent
         val myIntent = Intent(this, ChessAvtivity::class.java)
         val id = System.currentTimeMillis().toInt()
-        val am = getSystemService(ALARM_SERVICE) as AlarmManager
-
         val pendingIntent = PendingIntent.getActivity(this,
-                id, myIntent, 0) // id is unique
+                id, myIntent, 0)
 
-        pendingIntents.add(pendingIntent) // issue that this is global?
 
-        am[AlarmManager.RTC_WAKEUP, cal_alarm.timeInMillis] = pendingIntent
+        val calAlarm: Calendar = Calendar.getInstance()
+
+        calAlarm.set(Calendar.HOUR_OF_DAY, hour.toInt())
+        calAlarm.set(Calendar.MINUTE, minute.toInt())
+        calAlarm.set(Calendar.SECOND, 0)
+
+        Log.e("debug", "setting alarm at minute ${minute.toInt().toString()}")
+        Log.e("debug", "setting alarm at hour ${hour.toInt().toString()}")
+        //calAlarm.add(Calendar.SECOND, 10) // here we use the parameter time
+
+        alarms.add(Alarm(hash, pendingIntent, onoff, calAlarm.timeInMillis))
+
 
     }
+
+    private fun startAlarm(hash:Int) {
+
+        for (alarm in alarms){
+            if (alarm.id == hash){
+
+                alarm.active=true
+
+                val am = getSystemService(ALARM_SERVICE) as AlarmManager
+                am[AlarmManager.RTC_WAKEUP, alarm.timeToGoOff] = alarm.pendingIntent // unique id in alarm manger!
+                break
+
+            }
+        }
+
+        printAllAlarms()
+
+    }
+
+    private fun stopAlarm(hash : Int){
+
+        for (alarm in alarms){
+            if (alarm.id == hash){
+                alarm.active=false
+                break
+            }
+        }
+        Log.e("debug", "cancelling alarm with id : $hash")
+        printAllAlarms()
+
+    }
+
+    private fun printAllAlarms(){
+        for (alarm in alarms){
+            alarm.printme()
+        }
+    }
+
+
+    /*From StackOverflow: If you want to set multiple alarms (repeating or single), then you just need to create their PendingIntents with different requestCode. If requestCode is the same, then the new alarm will overwrite the old one.*/
+
 
     // Receiver
     private var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
 
-            val hour = data?.getStringExtra("hour")
-            val minute = data?.getStringExtra("minute")
+            var hour = data?.getStringExtra("hour")
+            var minute = data?.getStringExtra("minute")
 
             Log.e("debug", hour.toString())
 
-            createWidgetForAlarm("$hour:$minute")
+            // change 3:30 and 12:5 to 03:30 and 12:05
+            if(hour!!.length == 1){
+                hour = "0$hour"
+            }
+            if(minute!!.length == 1){
+                minute = "0$minute"
+            }
+
+            //addAlarm(Calendar.getInstance().timeInMillis, false, minute, hour)
+            createWidgetForAlarm(hour, minute)
             //createAlarm(input)
         }
     }
-
-
 
     fun onAddAlarmButtonClick(v: View?) {
         val intent = Intent(this@MainActivity, TimeActivity::class.java)
@@ -164,8 +212,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    override fun onClick(p0: View?) {
-        TODO("Not yet implemented")
-        Log.e("debug", "womething was clicked")
+    class Alarm(val id: Int, val pendingIntent: PendingIntent, var active: Boolean, val timeToGoOff: Long){
+
+        fun turnOff(){
+            active = !active
+        }
+
+        fun printme(){
+            Log.e("debug", "id $id pendingIntent $pendingIntent active $active timeToGoOff $timeToGoOff")
+        }
+
     }
+
 }
