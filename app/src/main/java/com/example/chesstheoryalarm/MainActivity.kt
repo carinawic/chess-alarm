@@ -5,16 +5,13 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock.elapsedRealtime
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.children
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.*
 
@@ -24,18 +21,17 @@ class MainActivity : AppCompatActivity(){
 
     /*
     * TODO:
-    *  alarm trigger every day
-    *  switch alarms on off
-    *  turn on screen in powerManager wakelock when the alarm rings
-    *  sound
+    *  sound!
     *  store when phone closes
-    * */
-
-    /*
-    * TODO:
-    *  everytime a switch changes, add or remove the alarm
+    *  turn on screen in powerManager wakelock when the alarm rings
+    *  game closes after 10 min
+    *  for 10 min, if you don't make a move within 10 ms, it starts shouting!!!
+    *  everytime you make a move, time resets
+    *  disallow several alarms within 10 min
+    *  make sure it runs in the background so that when the app closes, the alarm still works!
+    *  try on phone
     *  save to phone storage so the same settings remain next time you open the app
-    *  if necessary, restart the alarms next time phone starts! */
+    *  restart the alarms next time phone starts! */
 
 
     private var alarms = ArrayList<Alarm>()
@@ -55,55 +51,68 @@ class MainActivity : AppCompatActivity(){
 
         var innerLayout = findViewById<View>(R.id.innerLayout) as LinearLayout
 
+        // create bunch of views v, one for each logical alarm in the list
         val v: View = LayoutInflater.from(this).inflate(R.layout.alarm_box, null)
 
         innerLayout.addView(v)
 
-        val sv = findViewById<ScrollView>(R.id.scrollvewid) as ScrollView
-        val il = sv.findViewById<LinearLayout>(R.id.innerLayout) as LinearLayout
-        val cl = il.findViewById<ConstraintLayout>(R.id.widgetid) as ConstraintLayout
+        Log.e("debuggers","hash is ")
+        Log.e("debuggers", v.hashCode().toString())
 
-        val bt = cl.findViewById<Button>(R.id.timeButton) as Button
-        val sw = cl.findViewById<Switch>(R.id.alarmSwitch) as Switch
+        if (v is ViewGroup) {
+            val viewGroup = v as ViewGroup
+            for (i in 0 until viewGroup.childCount) {
+                val child = viewGroup.getChildAt(i)
 
-        bt.text = time
-        // put onclicklisteners on ALL buttons at the same time
-        for(child in il.children){
-            val buttonToClick = child.findViewById<Button>(R.id.timeButton) as Button
+                if(child is MaterialButton)
+                {
+                    Log.e("debuggers","found button!")
+                    Log.e("debuggers",child.toString())
 
-            val switchToClick = child.findViewById<Switch>(R.id.alarmSwitch) as Switch
-            buttonToClick.setOnClickListener(){
-                //Toast.makeText(this@MainActivity, "You clicked a button.", Toast.LENGTH_SHORT).show()
+                    child.text = time
 
-            }
-            switchToClick.setOnClickListener(){
+                    child.setOnClickListener(){
+                        Toast.makeText(this@MainActivity, "You clicked a button.", Toast.LENGTH_SHORT).show()
 
-                var message: String
+                    }
 
-                if(switchToClick.isChecked){
-                    message = "Alarm is on"
-                    Log.e("debug", "we want to switch on the alarm with the id : " + switchToClick.parent.hashCode())
-                    startAlarm(cl.hashCode())
-                }else{
-                    message = "Alarm is off"
-                    Log.e("debug", "we want to switch off the alarm with the id : " + switchToClick.parent.hashCode())
-                    stopAlarm(cl.hashCode()) // should be same as switchToClick.parent.hashCode()
                 }
+                if(child is Switch)
+                {
+                    Log.e("debuggers","found switch!")
+                    Log.e("debuggers",child.toString())
 
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                    child.setOnClickListener(){
+
+                        var message: String
+
+                        if(child.isChecked){
+                            message = "Alarm is on"
+                            Log.e("debug", "we want to switch on the alarm with the id : " + v.hashCode())
+                            startAlarm(v.hashCode())
+                        }else{
+                            message = "Alarm is off"
+                            Log.e("debug", "we want to switch off the alarm with the id : " + v.hashCode())
+                            stopAlarm(v.hashCode()) // should be same as switchToClick.parent.hashCode()
+                        }
+
+                        Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+
+                    }
+                }
 
             }
         }
-
-        //bt.text = time
-
-
-        addAlarm(cl.hashCode(), false, minute, hour)
+        addAlarm(v.hashCode(), false, minute, hour)
 
     }
 
     // https://developer.android.com/training/scheduling/alarms
-    private fun addAlarm(hash: Int, onoff: Boolean, minute: String, hour:String){
+    private fun addAlarm(hash: Int, onoff: Boolean, minute: String, hour: String){
+
+        // creating a pendingIntent and adding it to the alarm datastructure.
+        // Then to start the alarm in startAlarm, just use the pendingIndent
+        // associated with the alarm!
 
         // set placeholder pendingIntent
         val myIntent = Intent(this, ChessAvtivity::class.java)
@@ -118,12 +127,12 @@ class MainActivity : AppCompatActivity(){
         calAlarm.set(Calendar.MINUTE, minute.toInt())
         calAlarm.set(Calendar.SECOND, 0)
 
-        Log.e("debug", "setting alarm at minute ${minute.toInt().toString()}")
-        Log.e("debug", "setting alarm at hour ${hour.toInt().toString()}")
+        Log.e("setalarm", "setting alarm at minute ${minute.toInt().toString()}")
+        Log.e("setalarm", "setting alarm at hour ${hour.toInt().toString()}")
         //calAlarm.add(Calendar.SECOND, 10) // here we use the parameter time
 
-        alarms.add(Alarm(hash, pendingIntent, onoff, calAlarm.timeInMillis))
-
+        val am = getSystemService(ALARM_SERVICE) as AlarmManager
+        alarms.add(Alarm(hash, pendingIntent, onoff, calAlarm.timeInMillis, am))
 
     }
 
@@ -134,8 +143,12 @@ class MainActivity : AppCompatActivity(){
 
                 alarm.active=true
 
-                val am = getSystemService(ALARM_SERVICE) as AlarmManager
-                am[AlarmManager.RTC_WAKEUP, alarm.timeToGoOff] = alarm.pendingIntent // unique id in alarm manger!
+                //am[AlarmManager.RTC_WAKEUP, alarm.timeToGoOff] = alarm.pendingIntent // unique id in alarm manger!
+                //break
+                //am.set( AlarmManager.ELAPSED_REALTIME_WAKEUP, alarm.timeToGoOff - System.currentTimeMillis(), alarm.pendingIntent );
+
+                alarm.startalarm()
+
                 break
 
             }
@@ -150,6 +163,9 @@ class MainActivity : AppCompatActivity(){
         for (alarm in alarms){
             if (alarm.id == hash){
                 alarm.active=false
+
+                alarm.stopalarm()
+
                 break
             }
         }
@@ -212,15 +228,30 @@ class MainActivity : AppCompatActivity(){
         }
     }
 
-    class Alarm(val id: Int, val pendingIntent: PendingIntent, var active: Boolean, val timeToGoOff: Long){
+    class Alarm(val id: Int, val pendingIntent: PendingIntent, var active: Boolean, val timeToGoOff: Long, val am: AlarmManager){
 
         fun turnOff(){
             active = !active
         }
 
+        fun startalarm(){
+            am?.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                this.timeToGoOff,
+                //System.currentTimeMillis(),
+                AlarmManager.INTERVAL_DAY,
+                this.pendingIntent
+            )
+        }
+
+        fun stopalarm(){
+            am?.cancel(pendingIntent)
+        }
+
         fun printme(){
             Log.e("debug", "id $id pendingIntent $pendingIntent active $active timeToGoOff $timeToGoOff")
         }
+
 
     }
 
