@@ -44,11 +44,11 @@ class OnAlarmReceiver : BroadcastReceiver() {
         Toast.makeText(context, "Alarm !!!!!!!!!!", Toast.LENGTH_LONG).show()
 
         //start chess
-        //val i = Intent(context, ChessAvtivity::class.java)
-        //i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        //i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        //Log.e("rec", "clicked")
-        //context.startActivity(i);
+        val i = Intent(context, ChessAvtivity::class.java)
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        Log.e("rec", "clicked")
+        context.startActivity(i);
 
         // save whether we should go to chess activity in shared prefs
         //val ctx: Context = context.getApplicationContext()

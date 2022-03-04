@@ -9,6 +9,8 @@ import android.os.*
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
@@ -19,14 +21,6 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random.Default.nextInt
 
-
-/*
-* TODO:
-*  settings (add/remove force shutoff alarm button)
-*  show solution
-*  sound! that disables for 20 sek on touch, for 10 mins
-* */
-
 // alarm service
 // https://www.geeksforgeeks.org/how-to-build-a-simple-alarm-setter-app-in-android/
 
@@ -35,7 +29,6 @@ import kotlin.random.Random.Default.nextInt
 
 // fen to chessboard
 // https://github.com/bhlangonijr/chesslib#Get_FEN_string_from_chessboard
-
 
 
 class Board(private val FEN: String){
@@ -136,7 +129,6 @@ class Board(private val FEN: String){
                 digitCounter = 0
             }
         }
-
         return FENbuilder
     }
 }
@@ -161,16 +153,12 @@ class ChessAvtivity : AppCompatActivity() {
         sp.edit().putBoolean("changeActivity2", false).apply();
         Log.e("cal", "changed back to starting with main activity")
 
-        val i = Intent(this, OnAlarmReceiver::class.java)
-        Log.e("rec", "clicked")
-        val pendingIntent = PendingIntent.getBroadcast(this, 0, i,
-                PendingIntent.FLAG_ONE_SHOT)
+        val sol_tv = findViewById(R.id.sol_tv) as TextView
 
-        val aManager = getSystemService(ALARM_SERVICE) as AlarmManager
-        val intent = Intent(baseContext, this::class.java)
-        val pIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-
+        val sol_button = findViewById(R.id.sol_button) as Button
+        sol_button.setOnClickListener {
+            sol_tv.setText(currentSolution.toString())
+        }
 
         // if we have saved app state data, override currentProblemIndex
         this.currentProblemIndex = 11
@@ -198,20 +186,12 @@ class ChessAvtivity : AppCompatActivity() {
         Log.e("debug", board.getFen())
         */
 
-
         setNextFENandSolution(fenList)
 
-
          //"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" //
-
         val chessBoard: ChessBoardView = findViewById<ChessBoardView>(R.id.chessBoard)
-
         //chessBoard.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-
-
         chessBoard.setFen(this.currentFEN)
-
-
         val delay = 500 // 1000 milliseconds == 1 second
 
         val handler = Handler()
@@ -226,7 +206,6 @@ class ChessAvtivity : AppCompatActivity() {
                 // if fail, it retraces one move
                 // note that the computer makes every second move
 
-
                 Log.e("debug", "waiting for update")
 
                 if (currentFEN != newFEN) {
@@ -236,8 +215,6 @@ class ChessAvtivity : AppCompatActivity() {
                     Log.e("debug", "new pos")
                     Log.e("debug", newFEN)
 
-                    aManager.cancel(pIntent) // cancel the alarm
-
                     if (isCorrectMoveThenMakeComputerMove(newFEN)) {
                         Log.e("debug", "updating global pos")
                         currentFEN = newFEN
@@ -246,16 +223,15 @@ class ChessAvtivity : AppCompatActivity() {
 
                         if (wereAtMove >= currentSolution.size) {
                             // new prob
+                            sol_tv.setText("")
                             setNextFENandSolution(fenList)
                         } else {
                             setFenAfterComputerMove()
                         }
 
-
                     } else {
                         // go back to previous position
                         chessBoard.setFen(currentFEN)
-
                     }
 
                     // currentFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -263,11 +239,7 @@ class ChessAvtivity : AppCompatActivity() {
                 }
             }
         }, delay.toLong())
-
-
     }
-
-
 
     private fun setFenAfterComputerMove() {
 
@@ -290,10 +262,7 @@ class ChessAvtivity : AppCompatActivity() {
 
         this.currentFEN = board.getFen()
         this.wereAtMove ++
-
     }
-
-
 
     fun isCorrectMoveThenMakeComputerMove(newFEN: String): Boolean {
 
@@ -307,35 +276,21 @@ class ChessAvtivity : AppCompatActivity() {
         board.doMove(firstCoordinate, secondCoordinate)
         val afterCorrectMoveFEN = board.getFen()
 
-
         // compare the correct FEN to the FEN that we got from the user
         // if correct move:
         Log.e("debug", "was correct answer?")
         Log.e("debug", (newFEN == afterCorrectMoveFEN).toString())
         return (newFEN == afterCorrectMoveFEN)
 
-        /*
-        if wholeproblemsolved{
-            currentProblemIndex++
-            setCurrentFENansSolution()
-        }*/
-
     }
-
-
 
     private fun setNextFENandSolution(fenList: ArrayList<String>) {
 
         // fetch the fist index that is a black-moves-first problem
-
-
         this.wereAtMove = 0
         this.currentProblemIndex = (0..(fenList.size-1)).random()
 
-
         // next problem is a random problem
-
-
         var searchingForProblem = true
         while (searchingForProblem){
 
@@ -348,15 +303,11 @@ class ChessAvtivity : AppCompatActivity() {
 
                 if (board.hasSquareBlackPiece(firstCoordinate)){
                     // SUCCESS
-
                     Log.e("debug", "found a black-moves-first problem at index ")
                     Log.e("debug", currentProblemIndex.toString())
 
-
                     this.currentFEN = fenInnerList[1].split(" ")[0]
                     this.currentSolution = moves
-
-
 
                     Log.e("debug", "setting up FEN")
                     Log.e("debug", currentFEN)
@@ -400,5 +351,4 @@ class ChessAvtivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
 }

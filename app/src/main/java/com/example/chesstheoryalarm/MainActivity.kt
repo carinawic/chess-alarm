@@ -17,34 +17,14 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(){
 
-
-    /*
-    * TODO:
-    *  store when phone closes
-    *  turn on screen in powerManager wakelock when the alarm rings
-    *  game closes after 10 min
-    *  for 10 min, if you don't make a move within 10 ms, it starts shouting!!!
-    *  everytime you make a move, time resets
-    *  disallow several alarms within 10 min
-    *  make sure it runs in the background so that when the app closes, the alarm still works!
-    *  try on phone
-    *  save to phone storage so the same settings remain next time you open the app
-    *  restart the alarms next time phone starts! */
-
-
-
-
-
     private var alarms = ArrayList<Alarm>()
 
     override fun onResume() {
         super.onResume()
 
-
         Log.e("res", "resume!!!")
         val prefs = getSharedPreferences("name", 0)
         val loadNewActivity = prefs.getBoolean("changeActivity2", false)
-
 
         if (loadNewActivity) {
             val intent = Intent(this, ChessAvtivity::class.java)
@@ -60,17 +40,11 @@ class MainActivity : AppCompatActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
         val btn: FloatingActionButton = findViewById<View>(R.id.fab) as FloatingActionButton
         btn.setOnClickListener { v -> onAddAlarmButtonClick(v) }
-
-
-
-
-
     }
 
     private fun createWidgetForAlarm(hour: String, minute: String){
@@ -134,10 +108,8 @@ class MainActivity : AppCompatActivity(){
                         }
 
                         Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
-
                     }
                 }
-
             }
         }
         addAlarm(v.hashCode(), false, minute, hour)
@@ -147,34 +119,12 @@ class MainActivity : AppCompatActivity(){
     // https://developer.android.com/training/scheduling/alarms
     private fun addAlarm(hash: Int, onoff: Boolean, minute: String, hour: String){
 
-        // creating a pendingIntent and adding it to the alarm datastructure.
-        // Then to start the alarm in startAlarm, just use the pendingIndent
-        // associated with the alarm!
-
-        //startService(Intent(this@MainActivity, MyAlarmService::class.java))
-
-        //this.startForeground(1, "s")
-
-        // set placeholder pendingIntent :::: ChessAvtivity MyAlarmService
-        //val myIntent = Intent(this@MainActivity, ChessAvtivity::class.java)
-        //myIntent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        //val id = System.currentTimeMillis().toInt()
-        //val pendingIntent = PendingIntent.getService(
-        //    this,
-        //    id, myIntent, 0
-        //)
-
-
-
         val i = Intent(this, OnAlarmReceiver::class.java)
         Log.e("rec", "clicked")
         val pendingIntent = PendingIntent.getBroadcast(this, 0, i,
                 PendingIntent.FLAG_ONE_SHOT)
 
-
-
         val calAlarm: Calendar = Calendar.getInstance()
-
 
         calAlarm.timeInMillis = System.currentTimeMillis()
         calAlarm.set(Calendar.HOUR_OF_DAY, hour.toInt())
@@ -242,9 +192,7 @@ class MainActivity : AppCompatActivity(){
         }
     }
 
-
     /*From StackOverflow: If you want to set multiple alarms (repeating or single), then you just need to create their PendingIntents with different requestCode. If requestCode is the same, then the new alarm will overwrite the old one.*/
-
 
     // Receiver
     private var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -325,8 +273,5 @@ class MainActivity : AppCompatActivity(){
                     "id $id pendingIntent $pendingIntent active $active timeToGoOff $timeToGoOff"
             )
         }
-
-
     }
-
 }

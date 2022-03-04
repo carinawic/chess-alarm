@@ -19,8 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 import kotlin.collections.ArrayList
 
-
-
 class TimeActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     @SuppressLint("WrongViewCast")
@@ -44,13 +42,9 @@ class TimeActivity : AppCompatActivity() {
         finish()
     }
 
-
-
-
     class AlarmReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             Toast.makeText(context, "ALARM", Toast.LENGTH_LONG).show()
         }
     }
-
 }
