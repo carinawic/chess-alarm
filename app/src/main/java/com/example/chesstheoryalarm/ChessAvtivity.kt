@@ -2,17 +2,23 @@ package com.example.chesstheoryalarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
+import android.app.Service
+import android.content.*
+import android.media.MediaPlayer
+import android.os.*
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
+import androidx.annotation.Nullable
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import no.bakkenbaeck.chessboardeditor.view.board.ChessBoardView
 import java.io.InputStream
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.random.Random.Default.nextInt
+
 
 /*
 * TODO:
@@ -29,6 +35,8 @@ import java.io.InputStream
 
 // fen to chessboard
 // https://github.com/bhlangonijr/chesslib#Get_FEN_string_from_chessboard
+
+
 
 class Board(private val FEN: String){
 
@@ -132,12 +140,14 @@ class Board(private val FEN: String){
         return FENbuilder
     }
 }
+
 class ChessAvtivity : AppCompatActivity() {
 
     private var currentProblemIndex = 2
     private var wereAtMove = 0
     private var currentFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
     private var currentSolution = emptyList<String>()
+
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,16 +157,18 @@ class ChessAvtivity : AppCompatActivity() {
 
         supportActionBar?.title = "Chessboard"
 
+        val sp : SharedPreferences = this.getSharedPreferences("name",AppCompatActivity.MODE_PRIVATE)
+        sp.edit().putBoolean("changeActivity2", false).apply();
+        Log.e("cal", "changed back to starting with main activity")
+
+        val i = Intent(this, OnAlarmReceiver::class.java)
+        Log.e("rec", "clicked")
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, i,
+                PendingIntent.FLAG_ONE_SHOT)
+
         val aManager = getSystemService(ALARM_SERVICE) as AlarmManager
         val intent = Intent(baseContext, this::class.java)
         val pIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-
-
-
-
-
-
 
 
 
@@ -255,6 +267,8 @@ class ChessAvtivity : AppCompatActivity() {
 
     }
 
+
+
     private fun setFenAfterComputerMove() {
 
         val board = Board(currentFEN)
@@ -316,7 +330,10 @@ class ChessAvtivity : AppCompatActivity() {
 
 
         this.wereAtMove = 0
-        this.currentProblemIndex ++
+        this.currentProblemIndex = (0..(fenList.size-1)).random()
+
+
+        // next problem is a random problem
 
 
         var searchingForProblem = true
@@ -354,7 +371,7 @@ class ChessAvtivity : AppCompatActivity() {
                     Log.e("debug", "DID NOT find a black-moves-first problem at index ")
                     Log.e("debug", currentProblemIndex.toString())
 
-                    this.currentProblemIndex ++
+                    this.currentProblemIndex = (0..(fenList.size-1)).random()
                     // try again
                 }
             }

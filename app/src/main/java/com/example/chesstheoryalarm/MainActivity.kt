@@ -5,7 +5,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
-import android.os.SystemClock.elapsedRealtime
 import android.util.Log
 import android.view.*
 import android.widget.*
@@ -21,7 +20,6 @@ class MainActivity : AppCompatActivity(){
 
     /*
     * TODO:
-    *  sound!
     *  store when phone closes
     *  turn on screen in powerManager wakelock when the alarm rings
     *  game closes after 10 min
@@ -34,19 +32,48 @@ class MainActivity : AppCompatActivity(){
     *  restart the alarms next time phone starts! */
 
 
+
+
+
     private var alarms = ArrayList<Alarm>()
+
+    override fun onResume() {
+        super.onResume()
+
+
+        Log.e("res", "resume!!!")
+        val prefs = getSharedPreferences("name", 0)
+        val loadNewActivity = prefs.getBoolean("changeActivity2", false)
+
+
+        if (loadNewActivity) {
+            val intent = Intent(this, ChessAvtivity::class.java)
+            startActivity(intent)
+            Log.e("loadNewActivity2", loadNewActivity.toString())
+        } else {
+
+            Log.e("res", "normal!!!")
+            // Do normal startup
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
 
         val btn: FloatingActionButton = findViewById<View>(R.id.fab) as FloatingActionButton
         btn.setOnClickListener { v -> onAddAlarmButtonClick(v) }
 
+
+
+
+
     }
 
-    private fun createWidgetForAlarm(hour: String, minute:String){
+    private fun createWidgetForAlarm(hour: String, minute: String){
         val time = "$hour:$minute"
 
         var innerLayout = findViewById<View>(R.id.innerLayout) as LinearLayout
@@ -56,7 +83,7 @@ class MainActivity : AppCompatActivity(){
 
         innerLayout.addView(v)
 
-        Log.e("debuggers","hash is ")
+        Log.e("debuggers", "hash is ")
         Log.e("debuggers", v.hashCode().toString())
 
         if (v is ViewGroup) {
@@ -66,21 +93,25 @@ class MainActivity : AppCompatActivity(){
 
                 if(child is MaterialButton)
                 {
-                    Log.e("debuggers","found button!")
-                    Log.e("debuggers",child.toString())
+                    Log.e("debuggers", "found button!")
+                    Log.e("debuggers", child.toString())
 
                     child.text = time
 
                     child.setOnClickListener(){
-                        Toast.makeText(this@MainActivity, "You clicked a button.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                                this@MainActivity,
+                                "You clicked a button.",
+                                Toast.LENGTH_SHORT
+                        ).show()
 
                     }
 
                 }
                 if(child is Switch)
                 {
-                    Log.e("debuggers","found switch!")
-                    Log.e("debuggers",child.toString())
+                    Log.e("debuggers", "found switch!")
+                    Log.e("debuggers", child.toString())
 
                     child.setOnClickListener(){
 
@@ -88,11 +119,17 @@ class MainActivity : AppCompatActivity(){
 
                         if(child.isChecked){
                             message = "Alarm is on"
-                            Log.e("debug", "we want to switch on the alarm with the id : " + v.hashCode())
+                            Log.e(
+                                    "debug",
+                                    "we want to switch on the alarm with the id : " + v.hashCode()
+                            )
                             startAlarm(v.hashCode())
                         }else{
                             message = "Alarm is off"
-                            Log.e("debug", "we want to switch off the alarm with the id : " + v.hashCode())
+                            Log.e(
+                                    "debug",
+                                    "we want to switch off the alarm with the id : " + v.hashCode()
+                            )
                             stopAlarm(v.hashCode()) // should be same as switchToClick.parent.hashCode()
                         }
 
@@ -114,29 +151,52 @@ class MainActivity : AppCompatActivity(){
         // Then to start the alarm in startAlarm, just use the pendingIndent
         // associated with the alarm!
 
-        // set placeholder pendingIntent
-        val myIntent = Intent(this, ChessAvtivity::class.java)
-        val id = System.currentTimeMillis().toInt()
-        val pendingIntent = PendingIntent.getActivity(this,
-                id, myIntent, 0)
+        //startService(Intent(this@MainActivity, MyAlarmService::class.java))
+
+        //this.startForeground(1, "s")
+
+        // set placeholder pendingIntent :::: ChessAvtivity MyAlarmService
+        //val myIntent = Intent(this@MainActivity, ChessAvtivity::class.java)
+        //myIntent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        //val id = System.currentTimeMillis().toInt()
+        //val pendingIntent = PendingIntent.getService(
+        //    this,
+        //    id, myIntent, 0
+        //)
+
+
+
+        val i = Intent(this, OnAlarmReceiver::class.java)
+        Log.e("rec", "clicked")
+        val pendingIntent = PendingIntent.getBroadcast(this, 0, i,
+                PendingIntent.FLAG_ONE_SHOT)
+
 
 
         val calAlarm: Calendar = Calendar.getInstance()
 
+
+        calAlarm.timeInMillis = System.currentTimeMillis()
         calAlarm.set(Calendar.HOUR_OF_DAY, hour.toInt())
         calAlarm.set(Calendar.MINUTE, minute.toInt())
         calAlarm.set(Calendar.SECOND, 0)
+        calAlarm.set(Calendar.MILLISECOND, 0);
 
         Log.e("setalarm", "setting alarm at minute ${minute.toInt().toString()}")
         Log.e("setalarm", "setting alarm at hour ${hour.toInt().toString()}")
         //calAlarm.add(Calendar.SECOND, 10) // here we use the parameter time
+
+        // if alarm time has already passed, increment day by 1
+        //if (calAlarm.timeInMillis <= System.currentTimeMillis()) {
+        //    calAlarm.set(Calendar.DAY_OF_MONTH, calAlarm.get(Calendar.DAY_OF_MONTH) + 1);
+        //}
 
         val am = getSystemService(ALARM_SERVICE) as AlarmManager
         alarms.add(Alarm(hash, pendingIntent, onoff, calAlarm.timeInMillis, am))
 
     }
 
-    private fun startAlarm(hash:Int) {
+    private fun startAlarm(hash: Int) {
 
         for (alarm in alarms){
             if (alarm.id == hash){
@@ -158,7 +218,7 @@ class MainActivity : AppCompatActivity(){
 
     }
 
-    private fun stopAlarm(hash : Int){
+    private fun stopAlarm(hash: Int){
 
         for (alarm in alarms){
             if (alarm.id == hash){
@@ -169,6 +229,8 @@ class MainActivity : AppCompatActivity(){
                 break
             }
         }
+
+
         Log.e("debug", "cancelling alarm with id : $hash")
         printAllAlarms()
 
@@ -228,11 +290,19 @@ class MainActivity : AppCompatActivity(){
         }
     }
 
-    class Alarm(val id: Int, val pendingIntent: PendingIntent, var active: Boolean, val timeToGoOff: Long, val am: AlarmManager){
+    class Alarm(
+            val id: Int,
+            val pendingIntent: PendingIntent,
+            var active: Boolean,
+            val timeToGoOff: Long,
+            val am: AlarmManager
+    ){
 
         fun turnOff(){
             active = !active
         }
+
+        val RUN_DAILY = (24 * 60 * 60 * 1000).toLong()
 
         fun startalarm(){
             am?.setInexactRepeating(
@@ -242,6 +312,7 @@ class MainActivity : AppCompatActivity(){
                 AlarmManager.INTERVAL_DAY,
                 this.pendingIntent
             )
+            am[AlarmManager.RTC_WAKEUP, timeToGoOff] = pendingIntent
         }
 
         fun stopalarm(){
@@ -249,7 +320,10 @@ class MainActivity : AppCompatActivity(){
         }
 
         fun printme(){
-            Log.e("debug", "id $id pendingIntent $pendingIntent active $active timeToGoOff $timeToGoOff")
+            Log.e(
+                    "debug",
+                    "id $id pendingIntent $pendingIntent active $active timeToGoOff $timeToGoOff"
+            )
         }
 
 
